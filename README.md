@@ -35,20 +35,18 @@ docker compose up -d --force-recreate
 
 ## 📡 Monitor Automático
 
-O script `monitor/check_upstream.sh` é executado diariamente às 03:00 via cron e verifica:
+Dois scripts de monitoramento via cron:
 
-1. **API Evolution** — health check e estado da instância
-2. **Baileys (npm)** — versão mais recente disponível
-3. **GitHub releases** — novas versões da Evolution API
-4. **Issues críticas** — bugs reportados no Baileys
-5. **Logs** — erros nas últimas 24h
-6. **Disco** — espaço em disco
-7. **Containers** — saúde dos serviços Docker
+| Script | Frequência | Verifica | Notifica |
+|---|---|---|---|
+| `monitor/check_health.sh` | **A cada 1 hora** | API, instância WhatsApp, containers, disco | ⚠️ Só se algo falhar |
+| `monitor/check_upstream.sh` | **1x ao dia (03:00)** | Baileys npm, GitHub releases, CVE, logs | ⚠️ Só se precisar de update |
 
-**Notificações** são enviadas no grupo `Server_notification` (WhatsApp). Em caso de falha, usa o número pessoal como fallback.
+**Notificações** enviadas no grupo `Server_notification` (WhatsApp). Fallback para número pessoal se o grupo falhar.
 
 ```bash
 # Executar manualmente
+bash /var/www/apps/evolution-api/monitor/check_health.sh
 bash /var/www/apps/evolution-api/monitor/check_upstream.sh
 
 # Logs do monitor

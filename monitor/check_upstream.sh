@@ -1,7 +1,8 @@
 #!/bin/bash
 # ====================================================================
-# Monitor Evolution API — Verificação de upstream e dependências
-# Execução recomendada: diária via cron (03:00)
+# Monitor Evolution API — Verificação de upstream (dependências)
+# Execução: 1x ao dia via cron (03:00)
+# Health check rápido roda a cada 1h pelo check_health.sh
 # ====================================================================
 set -euo pipefail
 
@@ -26,10 +27,9 @@ if [ -z "$GITHUB_TOKEN" ]; then
     GITHUB_TOKEN=$(cd "$WORK_DIR" && git remote get-url origin 2>/dev/null | sed 's|.*://[^:]*:\([^@]*\)@.*|\1|')
 fi
 
-# Versões atuais (conhecidas e estáveis)
+# Versões atuais
 CURRENT_BAILEYS="7.0.0-rc13"
 CURRENT_EVOLUTION="2.3.7"
-CURRENT_WA_VERSION="2.3000.1040847988" # Obtido do / da API
 
 # Limites
 TIMEOUT_CURL=30
@@ -106,27 +106,7 @@ alerts=""
 
 log_info "=== INICIANDO VERIFICAÇÃO DIÁRIA ==="
 
-# 1. Health check da API
-log_info "Verificando API Evolution..."
-if check_http "$API_URL/"; then
-    log_info "✅ API respondendo (HTTP 200)"
-else
-    log_error "❌ API não respondeu"
-    send_notification "🔴 EMERGÊNCIA: Evolution API não respondeu à verificação diária" "urgente"
-    exit 1
-fi
-
-# 2. Estado da instância MS_Morato
-log_info "Verificando instância MS_Morato..."
-state=$(curl -s --max-time "$TIMEOUT_CURL" -H "apikey: $TOKEN" "$API_URL/instance/connectionState/$INSTANCE" | grep -oP '"state"\s*:\s*"\K[^"]+')
-if [ "$state" = "open" ]; then
-    log_info "✅ Instância $INSTANCE conectada (open)"
-else
-    log_warn "⚠️ Instância $INSTANCE com estado: $state"
-    alerts="${alerts}⚠️ Instância MS_Morato: $state\n"
-fi
-
-# 3. Verificar nova versão do Baileys no npm
+# 1. Verificar nova versão do Baileys no npm
 log_info "Verificando Baileys npm..."
 baileys_latest=$(npm view baileys version 2>/dev/null || echo "erro")
 baileys_rc_latest=$(npm view baileys versions --json 2>/dev/null | python3 -c "
@@ -145,7 +125,7 @@ if [ "$baileys_rc_latest" != "erro" ] && [ "$baileys_rc_latest" != "none" ]; the
     fi
 fi
 
-# 4. Verificar novas releases do Evolution API no GitHub
+# 2. Verificar novas releases do Evolution API no GitHub
 log_info "Verificando GitHub Evolution API..."
 gh_releases=$(curl -s --max-time "$TIMEOUT_CURL" \
     -H "Authorization: token $GITHUB_TOKEN" \
@@ -172,7 +152,7 @@ except: pass
     fi
 fi
 
-# 5. Verificar CVE / issues críticas no Baileys
+# 3. Verificar CVE / issues críticas no Baileys
 log_info "Verificando issues críticas no Baileys..."
 cve_check=$(curl -s --max-time "$TIMEOUT_CURL" \
     "https://api.github.com/search/issues?q=repo:WhiskeySockets/Baileys+label:bug+state:open&per_page=3" 2>/dev/null)
@@ -185,7 +165,7 @@ try:
 except: print(0)
 " 2>/dev/null)
 
-# 6. Verificar logs por erros recentes (ignorar primeiras 2h pós-restart)
+# 4. Verificar logs por erros recentes (ignorar primeiras 2h pós-restart)
 log_info "Verificando logs por erros..."
 container_start=$(docker inspect evolution-api --format '{{.State.StartedAt}}' 2>/dev/null | cut -d'.' -f1)
 container_epoch=$(date -d "$container_start" +%s 2>/dev/null || echo 0)
@@ -195,38 +175,13 @@ uptime_hours=$(( (now_epoch - container_epoch) / 3600 ))
 if [ "$uptime_hours" -gt 2 ]; then
     recent_errors=$(docker logs evolution-api --since 24h 2>&1 | grep -cE "(Error|error|fail|critical)" 2>/dev/null || echo 0)
     if [ "$recent_errors" -gt 100 ]; then
-        log_warn "⚠️ $recent_errors erros nas últimas 24h"
+        log_warn "⚠️ $recent_errors erros nas últimas 24h (pode ser ruído pós-restart)"
         alerts="${alerts}⚠️ $recent_errors erros nos logs (24h)\n"
     else
         log_info "✅ Logs limpos ($recent_errors erros)"
     fi
 else
-    log_info "⏳ Container rodando há ${uptime_hours}h — pulando verificação de logs (ruído de restart esperado)"
-fi
-
-# 7. Verificar espaço em disco
-log_info "Verificando disco..."
-disk_usage=$(df / | awk 'NR==2 {print $5}' | sed 's/%//')
-if [ "$disk_usage" -gt 85 ]; then
-    log_warn "⚠️ Disco em $disk_usage%"
-    alerts="${alerts}⚠️ Disco: $disk_usage% usado\n"
-else
-    log_info "✅ Disco: $disk_usage% usado"
-fi
-
-# 8. Verificar health dos containers
-log_info "Verificando containers..."
-container_ok=true
-for c in evolution-api evolution-postgres evolution-redis; do
-    status=$(docker ps --filter "name=$c" --format "{{.Status}}" 2>/dev/null | head -1)
-    if [ -z "$status" ]; then
-        log_error "❌ Container $c não está rodando"
-        alerts="${alerts}🔴 Container $c parado!\n"
-        container_ok=false
-    fi
-done
-if $container_ok; then
-    log_info "✅ Todos os containers saudáveis"
+    log_info "⏳ Container rodando há ${uptime_hours}h — pulando verificação de logs"
 fi
 
 # === RESUMO E NOTIFICAÇÃO ===
@@ -238,13 +193,9 @@ ${alerts}Ação necessária para continuidade do serviço."
     echo -e "$alerts"
     send_notification "$summary" "urgente"
 else
-    summary="📡 Monitor Evolution API — $(date '+%d/%m/%Y %H:%M')
-✅ API: OK
-✅ Instância MS_Morato: conectada
+    summary="📡 Upstream Check — $(date '+%d/%m/%Y %H:%M')
 ✅ Baileys: $CURRENT_BAILEYS (atualizado)
 ✅ Evolution: $CURRENT_EVOLUTION
-✅ Containers: saudáveis
-✅ Disco: $disk_usage%
 ✅ Logs: sem anomalias
 Nenhuma intervenção necessária."
     log_info "=== TUDO OK ==="
