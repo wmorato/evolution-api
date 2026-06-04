@@ -3,8 +3,10 @@
 **WhatsApp (Baileys) + Chatwoot via Evolution API**
 
 ## Critical Pins & Versions
-- **Image**: `evoapicloud/evolution-api:v2.2.1` — do NOT use `latest` (v2.3.7 has SDK bug `t.get is not a function` breaking group messages)
-- **WA Version**: `2.3000.1034030014` (set in `docker/evolution-api.env`)
+- **Image**: `evolution-api-custom:2.3.7-baileys-rc13` (custom build com Baileys rc13)
+- **Base**: `evoapicloud/evolution-api:v2.3.7` — última versão sem licenciamento obrigatório
+- **Baileys**: `7.0.0-rc13` (bump manual via Dockerfile.evolution)
+- **GitHub fork**: `wmorato/evolution-api` (branch `main` = source, `production` = deploy)
 - **Node**: `NODE_OPTIONS="--dns-result-order=ipv4first"` required in env
 
 ## Stack (Docker)
@@ -35,6 +37,12 @@ docker compose up -d --force-recreate
 # Health check
 bash /var/www/apps/evolution-api/testes/test_evolution.sh
 
+# Rollback (se necessário)
+bash /var/www/apps/evolution-api/docker/rollback.sh
+
+# Rebuild custom image (após alterar Dockerfile.evolution)
+docker compose build evolution-api
+
 # Nginx reload (after changing /var/www/apps/evolution-api/doc/evolution-nginx.conf)
 sudo nginx -t && sudo systemctl reload nginx
 ```
@@ -43,6 +51,11 @@ sudo nginx -t && sudo systemctl reload nginx
 - **Config**: `/var/www/apps/evolution-api/doc/evolution-nginx.conf`
 - **Domain**: `evolution.moratosolucoes.com.br` → `161.97.161.109` (DNS A record required)
 - **SSL**: Let's Encrypt (auto-renew via Nginx)
+
+## Manutenção Contínua
+- **Bump Baileys**: Editar `docker/Dockerfile.evolution` e rebuildar imagem
+- **Monitorar LID**: Logs podem mostrar `@lid` — normal, v2.3.7 lida com isso
+- **Upstream**: Não seguir v2.4.0+ (licenciamento obrigatório)
 
 ## Sensitive Files
 - `docker/evolution-api.env` — API keys, DB passwords, Redis passwords
