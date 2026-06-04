@@ -31,6 +31,29 @@ docker compose up -d --force-recreate
 - `secrets/`: Variáveis de ambiente (link para `/var/www/secrets/`).
 - `testes/`: Scripts de validação de saúde da API.
 - `doc/`: Documentação técnica e Nginx configs.
+- `monitor/`: Script de verificação automática (execução diária 03:00).
+
+## 📡 Monitor Automático
+
+O script `monitor/check_upstream.sh` é executado diariamente às 03:00 via cron e verifica:
+
+1. **API Evolution** — health check e estado da instância
+2. **Baileys (npm)** — versão mais recente disponível
+3. **GitHub releases** — novas versões da Evolution API
+4. **Issues críticas** — bugs reportados no Baileys
+5. **Logs** — erros nas últimas 24h
+6. **Disco** — espaço em disco
+7. **Containers** — saúde dos serviços Docker
+
+**Notificações** são enviadas no grupo `Server_notification` (WhatsApp). Em caso de falha, usa o número pessoal como fallback.
+
+```bash
+# Executar manualmente
+bash /var/www/apps/evolution-api/monitor/check_upstream.sh
+
+# Logs do monitor
+ls -la /var/www/apps/evolution-api/monitor/logs/
+```
 
 ## 🔗 Integração Chatwoot
 
