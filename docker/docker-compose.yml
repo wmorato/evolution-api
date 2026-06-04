@@ -1,6 +1,9 @@
 services:
   evolution-api:
-    image: evoapicloud/evolution-api:v2.2.1
+    image: evolution-api-custom:2.3.7-baileys-rc13
+    build:
+      context: .
+      dockerfile: Dockerfile.evolution
     container_name: evolution-api
     restart: always
     ports:
