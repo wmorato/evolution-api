@@ -1,0 +1,80 @@
+services:
+  evolution-api:
+    image: evoapicloud/evolution-api:v2.2.1
+    container_name: evolution-api
+    restart: always
+    ports:
+      - "127.0.0.1:5030:8080"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    env_file: ./evolution-api.env
+    networks:
+      - evolution-network
+      - chatwoot-network
+    depends_on:
+      evolution-postgres:
+        condition: service_healthy
+      evolution-redis:
+        condition: service_healthy
+
+  evolution-manager:
+    image: evoapicloud/evolution-manager:latest
+    container_name: evolution-manager
+    restart: always
+    ports:
+      - "127.0.0.1:5031:80"
+    environment:
+      - API_URL=https://evolution.moratosolucoes.com.br
+    volumes:
+      - ./manager-nginx.conf:/etc/nginx/conf.d/nginx.conf:ro
+    networks:
+      - evolution-network
+
+  evolution-postgres:
+    image: postgres:16-alpine
+    container_name: evolution-postgres
+    restart: always
+    ports:
+      - "127.0.0.1:5436:5432"
+    environment:
+      POSTGRES_DB: evolution_api
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 50086a3babd882dd3d5faca7008bf255c1cad675522ac486
+    volumes:
+      - evolution_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - evolution-network
+
+  evolution-redis:
+    image: redis:7-alpine
+    container_name: evolution-redis
+    restart: always
+    ports:
+      - "127.0.0.1:6382:6379"
+    command: ["redis-server", "--requirepass", "7d9afe858282ccc27795bc9bc0be49c6b4a85a743a9ca7e8"]
+    volumes:
+      - evolution_redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a 7d9afe858282ccc27795bc9bc0be49c6b4a85a743a9ca7e8 --no-auth-warning ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - evolution-network
+
+networks:
+  evolution-network:
+    driver: bridge
+  chatwoot-network:
+    external: true
+    name: docker_chatwoot-network
+
+volumes:
+  evolution_postgres_data:
+  evolution_redis_data:
