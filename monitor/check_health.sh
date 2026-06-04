@@ -2,6 +2,9 @@
 # ====================================================================
 # Monitor Evolution API — Health check rápido
 # Execução: a cada 1 hora via cron
+# NOTA: O monitor 1-minuto via Google Apps Script está em:
+#   Google Sheets → Extensões → Apps Script (ecossistema-monitoramento)
+#   Esse script envia notificações para o Telegram E WhatsApp
 # ====================================================================
 set -euo pipefail
 

@@ -53,6 +53,17 @@ bash /var/www/apps/evolution-api/monitor/check_upstream.sh
 ls -la /var/www/apps/evolution-api/monitor/logs/
 ```
 
+### 🟢 Monitor 1-minuto (Google Apps Script)
+
+O script `monitor/gs_monitor.gs` roda no Google Sheets e verifica todos os serviços a cada 1 minuto via `https://moratosolucoes.com.br/api/v1/health-aggregator`. Envia notificações para **Telegram** e **WhatsApp** (grupo Server_notification).
+
+**Para instalar/atualizar:**
+1. Abra a planilha do monitoramento no Google Sheets
+2. Extensões → Apps Script
+3. Cole o conteúdo de `monitor/gs_monitor.gs`
+4. Disparadores → Ativar → `checkServerHealth` → a cada 1 minuto
+5. Execute uma vez para autorizar permissões
+
 ## 🔗 Integração Chatwoot
 
 A integração com o Chatwoot já está pré-configurada globalmente. Para conectar uma instância de WhatsApp ao Chatwoot:
