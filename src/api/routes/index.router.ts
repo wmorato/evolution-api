@@ -200,8 +200,8 @@ router
     res.status(HttpStatus.OK).json({
       status: HttpStatus.OK,
       message: 'Welcome to the Evolution API, it is working!',
+      version: packageJson.version,
       ...(!serverConfig.DISABLE_VERSION_INFO && {
-        version: packageJson.version,
         clientName: databaseConfig.CONNECTION.CLIENT_NAME,
         whatsappWebVersion: (await fetchLatestWaWebVersion({})).version.join('.'),
       }),
