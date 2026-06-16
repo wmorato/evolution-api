@@ -10,6 +10,7 @@ export type HttpServer = {
   URL: string;
   DISABLE_DOCS: boolean;
   DISABLE_MANAGER: boolean;
+  DISABLE_VERSION_INFO: boolean;
 };
 
 export type HttpMethods = 'POST' | 'GET' | 'PUT' | 'DELETE';
@@ -462,6 +463,7 @@ export class ConfigService {
         URL: process.env.SERVER_URL,
         DISABLE_DOCS: process.env?.SERVER_DISABLE_DOCS === 'true',
         DISABLE_MANAGER: process.env?.SERVER_DISABLE_MANAGER === 'true',
+        DISABLE_VERSION_INFO: process.env?.SERVER_DISABLE_VERSION_INFO === 'true',
       },
       CORS: {
         ORIGIN: process.env.CORS_ORIGIN?.split(',') || ['*'],

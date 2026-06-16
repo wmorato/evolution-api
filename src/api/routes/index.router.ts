@@ -194,14 +194,19 @@ router
   .use((req, res, next) => telemetry.collectTelemetry(req, res, next))
 
   .get('/', async (req, res) => {
+    const managerUrl = !serverConfig.DISABLE_MANAGER
+      ? `${serverConfig.URL || `${req.protocol}://${req.get('host')}`}/manager`
+      : undefined;
     res.status(HttpStatus.OK).json({
       status: HttpStatus.OK,
       message: 'Welcome to the Evolution API, it is working!',
-      version: packageJson.version,
-      clientName: databaseConfig.CONNECTION.CLIENT_NAME,
-      manager: !serverConfig.DISABLE_MANAGER ? `${req.protocol}://${req.get('host')}/manager` : undefined,
+      ...(!serverConfig.DISABLE_VERSION_INFO && {
+        version: packageJson.version,
+        clientName: databaseConfig.CONNECTION.CLIENT_NAME,
+        whatsappWebVersion: (await fetchLatestWaWebVersion({})).version.join('.'),
+      }),
+      manager: managerUrl,
       documentation: `https://doc.evolution-api.com`,
-      whatsappWebVersion: (await fetchLatestWaWebVersion({})).version.join('.'),
     });
   })
   .post('/verify-creds', authGuard['apikey'], async (req, res) => {
