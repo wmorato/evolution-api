@@ -29,6 +29,7 @@ services:
       - "127.0.0.1:5031:80"
     environment:
       - API_URL=https://evolution.moratosolucoes.com.br
+      - API_KEY=d44bacf08951f12db28f5e083a7e613c7636e4f6769441ce
     volumes:
       - ./manager-nginx.conf:/etc/nginx/conf.d/nginx.conf:ro
     networks:

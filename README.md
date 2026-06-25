@@ -94,7 +94,45 @@ curl -X POST http://localhost:5030/chatwoot/set/NOME_DA_INSTANCIA \
   }'
 ```
 
+## 💬 Envio de Mensagens via API
+
+Envia mensagens de texto de qualquer instância conectada.
+
+```bash
+curl -s --location 'https://evolution.moratosolucoes.com.br/message/sendText/NOME_DA_INSTANCIA' \
+  --header 'Content-Type: application/json' \
+  --header 'apikey: d44bacf08951f12db28f5e083a7e613c7636e4f6769441ce' \
+  --data '{
+    "number": "5511999999999",
+    "text": "Mensagem de texto"
+  }'
+```
+
+| Campo | Descrição |
+|---|---|
+| `NOME_DA_INSTANCIA` | Nome da instância conectada (ex: DK, MS_Morato) |
+| `number` | Número de destino com DDD e país (5511999999999) |
+| `text` | Conteúdo da mensagem |
+
+Resposta esperada (mensagem enviada para a fila):
+
+```json
+{
+  "key": {
+    "remoteJid": "5511999999999@s.whatsapp.net",
+    "fromMe": true,
+    "id": "3EB08F54FE798457F4B8F2"
+  },
+  "status": "PENDING",
+  "messageType": "conversation",
+  "messageTimestamp": 1781549103,
+  "instanceId": "31ed145d-..."
+}
+```
+
 ## ⚠️ Manutenção de DNS
-Este serviço requer que o subdomínio `evolution.moratosolucoes.com.br` esteja apontado para o IP `161.97.161.109`. Após o apontamento, o SSL será renovado automaticamente.
+Este serviço requer que o subdomínio `evolution.moratosolucoes.com.br` esteja apontado para o IP `190.83.85.138`. Após o apontamento, o SSL será renovado automaticamente.
+
+> **Histórico de IPs:** Anteriormente `161.97.161.109`.
 
 quando eu clico em QRCODE para ler nao abre para leitura, precisa confirmar se a variavel do whatsapp é compativel com a versao atual Versão 2.3000.1034030014 ( ou versao superior)

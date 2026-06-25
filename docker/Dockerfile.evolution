@@ -2,6 +2,9 @@ FROM evoapicloud/evolution-api:v2.3.7
 
 WORKDIR /evolution
 
-RUN npm install baileys@7.0.0-rc13
+RUN rm -rf dist && npm install baileys@7.0.0-rc13
+
+COPY dist /evolution/dist
+COPY package.json /evolution/package.json
 
 EXPOSE 8080
